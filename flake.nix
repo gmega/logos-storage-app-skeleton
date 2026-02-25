@@ -36,16 +36,10 @@
             inherit pkgs logosSdk logosLiblogos logosStorageModule logosDesignSystem;
           };
           src = ./.;
-          
+
           # Library package
           lib = import ./nix/lib.nix { 
-            inherit pkgs common src logosStorageModule logosSdk; 
-          };
-          
-          # App package
-          app = import ./nix/app.nix {
-            inherit pkgs common src logosLiblogos logosSdk logosStorageModule logosCapabilityModule logosDesignSystem;
-            logosStorageUI = lib;
+            inherit pkgs common src logosStorageModule logosSdk;
           };
 
           # CLI package
@@ -57,11 +51,10 @@
         {
           # Individual outputs
           lib = lib;
-          app = app;
           cli = cli;
 
           # Default package
-          default = app;
+          default = cli;
         }
       );
 
