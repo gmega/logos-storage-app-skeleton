@@ -126,11 +126,15 @@ pkgs.stdenv.mkDerivation rec {
 
     mkdir -p $out/bin $out/lib $out/modules $out/generated_code
 
-    # Install CLI binary
-    if [ -f "build/cli/bin/logos-storage-cli" ]; then
-      cp build/cli/bin/logos-storage-cli "$out/bin/"
-      echo "Installed logos-storage-cli binary"
+    if [ -f "build/cli/bin/logos-uploader" ]; then
+      cp build/cli/bin/logos-uploader "$out/bin/"
+      echo "Installed uploader binary"
     fi
+
+    #if [ -f "build/cli/bin/logos-downloader" ]; then
+      cp build/cli/bin/logos-downloader "$out/bin/"
+      echo "Installed downloader binary"
+    #fi
 
     # Copy the core binaries from liblogos
     if [ -f "${logosLiblogos}/bin/logoscore" ]; then

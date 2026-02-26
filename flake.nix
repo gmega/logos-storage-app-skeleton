@@ -28,13 +28,13 @@
       packages = forAllSystems ({ pkgs, logosSdk, logosLiblogos, logosStorageModule, logosCapabilityModule }:
         let
           # Common configuration
-          common = import ./nix/default.nix { 
+          common = import ./nix/default.nix {
             inherit pkgs logosSdk logosLiblogos logosStorageModule;
           };
           src = ./.;
 
           # Library package
-          lib = import ./nix/lib.nix { 
+          lib = import ./nix/lib.nix {
             inherit pkgs common src logosStorageModule logosSdk;
           };
 
@@ -68,7 +68,7 @@
             pkgs.krb5
             pkgs.abseil-cpp
           ];
-          
+
           shellHook = ''
             export LOGOS_CPP_SDK_ROOT="${logosSdk}"
             export LOGOS_LIBLOGOS_ROOT="${logosLiblogos}"

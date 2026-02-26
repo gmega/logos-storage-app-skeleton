@@ -3,11 +3,15 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <iostream>
-#include <thread>
 
 int app_main(LogosModules* modules, int argc, char* argv[]);
 
 int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        std::cerr << "Usage: " << argv[0] << " <upload|download> <arguments>" << std::endl;
+        return 1;
+    }
+
     QCoreApplication app(argc, argv);
     QCoreApplication::setOrganizationName("Logos");
     QCoreApplication::setApplicationName("LogosStorageCLI");
@@ -24,8 +28,21 @@ int main(int argc, char* argv[]) {
 }
 
 int app_main(LogosModules* modules, int argc, char* argv[]) {
-    // Your CLI application logic here
-    std::cout << "Running app" << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    if (argc < 2) {
+        std::cerr << "Usage: " << argv[0] << " <file>" << std::endl;
+        return 1;
+    }
+
+    const QString jsonConfig = "{"
+      "\"listen-addrs\": [\"/ip4/0.0.0.0/tcp/8000\"],"
+      "\"disc-port\": 9000,"
+      "\"nat\": \"none\""
+    "}";
+
+    if (!modules->storage_module.init(jsonConfig)) {
+        std::cerr << "Failed to initialize storage module" << std::endl;
+        return 1;
+    }
+
     return 0;
 }

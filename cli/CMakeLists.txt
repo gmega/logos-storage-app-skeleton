@@ -112,15 +112,14 @@ message(STATUS "Using logos-storage-module at: ${LOGOS_STORAGE_ROOT}")
 
 ########### SOURCES ###########
 
-set(SOURCES
-    main.cpp
+set(COMMON_SOURCES
     logos_manager.cpp
     logos_manager.h
 )
 
 # Add SDK sources (only if source layout, installed layout uses the library)
 if(_cpp_sdk_is_source)
-    list(APPEND SOURCES
+    list(APPEND COMMON_SOURCES
         ${LOGOS_CPP_SDK_ROOT}/cpp/logos_api.cpp
         ${LOGOS_CPP_SDK_ROOT}/cpp/logos_api.h
         ${LOGOS_CPP_SDK_ROOT}/cpp/logos_api_client.cpp
@@ -232,7 +231,7 @@ if(_cpp_sdk_is_source)
         add_dependencies(run_cpp_generator_logos_cli run_cpp_generator_storage_module)
     endif()
 
-    list(APPEND SOURCES ${PLUGINS_OUTPUT_DIR}/logos_sdk.cpp)
+    list(APPEND COMMON_SOURCES ${PLUGINS_OUTPUT_DIR}/logos_sdk.cpp)
 
     # Mark as generated so CMake knows to wait for it
     set_source_files_properties(
@@ -242,7 +241,7 @@ if(_cpp_sdk_is_source)
 else()
     # For installed/nix layout, logos_sdk.cpp is already pre-generated
     set(PLUGINS_OUTPUT_DIR "${CMAKE_SOURCE_DIR}/generated_code")
-    list(APPEND SOURCES ${PLUGINS_OUTPUT_DIR}/logos_sdk.cpp)
+    list(APPEND COMMON_SOURCES ${PLUGINS_OUTPUT_DIR}/logos_sdk.cpp)
 endif()
 
 ########### CPP GENERATOR END ###########
@@ -262,11 +261,10 @@ link_directories(
 # Set output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Create the executable
-add_executable(logos-storage-cli ${SOURCES})
+# Shared library target holding common sources, includes, and link libraries
+add_library(logos-common STATIC ${COMMON_SOURCES})
 
-# Link libraries
-target_link_libraries(logos-storage-cli PRIVATE
+target_link_libraries(logos-common PUBLIC
     Qt${QT_VERSION_MAJOR}::Core
     Qt${QT_VERSION_MAJOR}::RemoteObjects
     logos_core
@@ -275,33 +273,40 @@ target_link_libraries(logos-storage-cli PRIVATE
 # Link SDK library if using installed layout (source layout compiles the SDK directly)
 if(NOT _cpp_sdk_is_source)
     find_library(LOGOS_SDK_LIB logos_sdk PATHS ${LOGOS_CPP_SDK_ROOT}/lib NO_DEFAULT_PATH REQUIRED)
-    target_link_libraries(logos-storage-cli PRIVATE ${LOGOS_SDK_LIB})
+    target_link_libraries(logos-common PUBLIC ${LOGOS_SDK_LIB})
 endif()
+
+# Create executables
+add_executable(logos-uploader uploader.cpp)
+target_link_libraries(logos-uploader PRIVATE logos-common)
+
+add_executable(logos-downloader downloader.cpp)
+target_link_libraries(logos-downloader PRIVATE logos-common)
 
 ########### APP DEFINITION END ###########
 
 ########### HEADERS ###########
 
-# Include directories
-target_include_directories(logos-storage-cli PRIVATE
+# Include directories on the common target so all executables inherit them
+target_include_directories(logos-common PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
     ${PLUGINS_OUTPUT_DIR}
 )
 
 if(_liblogos_is_source)
-    target_include_directories(logos-storage-cli PRIVATE ${LOGOS_LIBLOGOS_ROOT})
+    target_include_directories(logos-common PUBLIC ${LOGOS_LIBLOGOS_ROOT})
 else()
-    target_include_directories(logos-storage-cli PRIVATE ${LOGOS_LIBLOGOS_ROOT}/include)
+    target_include_directories(logos-common PUBLIC ${LOGOS_LIBLOGOS_ROOT}/include)
 endif()
 
 if(_cpp_sdk_is_source)
-    target_include_directories(logos-storage-cli PRIVATE
+    target_include_directories(logos-common PUBLIC
         ${LOGOS_CPP_SDK_ROOT}/cpp
         ${LOGOS_CPP_SDK_ROOT}/cpp/generated
     )
 else()
-    target_include_directories(logos-storage-cli PRIVATE
+    target_include_directories(logos-common PUBLIC
         ${LOGOS_CPP_SDK_ROOT}/include
         ${LOGOS_CPP_SDK_ROOT}/include/cpp
         ${LOGOS_CPP_SDK_ROOT}/include/core
@@ -314,11 +319,11 @@ endif()
 ########### GENERATOR DEPENDENCY ###########
 
 if(_cpp_sdk_is_source)
-    add_dependencies(logos-storage-cli run_cpp_generator_logos_cli)
+    add_dependencies(logos-common run_cpp_generator_logos_cli)
 endif()
 
 if(_storage_module_is_source)
-    add_dependencies(logos-storage-cli run_cpp_generator_storage_module)
+    add_dependencies(logos-common run_cpp_generator_storage_module)
 endif()
 
 ########### GENERATOR DEPENDENCY END ###########
@@ -342,7 +347,7 @@ if(NOT EXISTS "${LOGOS_CPP_SDK_ROOT}/lib/liblogos_sdk.a" AND NOT EXISTS "${LOGOS
         VERBATIM
     )
 
-    add_dependencies(logos-storage-cli run_build_cpp_sdk)
+    add_dependencies(logos-common run_build_cpp_sdk)
 endif()
 
 if(NOT EXISTS "${LOGOS_LIBLOGOS_ROOT}/lib/liblogos_core.a" AND NOT EXISTS "${LOGOS_LIBLOGOS_ROOT}/lib/liblogos_core.dylib" AND NOT EXISTS "${LOGOS_LIBLOGOS_ROOT}/lib/liblogos_core.so")
@@ -361,32 +366,34 @@ if(NOT EXISTS "${LOGOS_LIBLOGOS_ROOT}/lib/liblogos_core.a" AND NOT EXISTS "${LOG
       VERBATIM
     )
 
-    add_dependencies(logos-storage-cli run_build_liblogos)
+    add_dependencies(logos-common run_build_liblogos)
 endif()
 
 ########### LOGOS DEPENDENCIES END ###########
 
 ########### RUNTIME LINKS ###########
 
-# Set RPATH settings for the executable
-if(APPLE)
-    set_target_properties(logos-storage-cli PROPERTIES
-        INSTALL_RPATH "@executable_path/../lib"
-        BUILD_WITH_INSTALL_RPATH TRUE
-    )
-elseif(UNIX)
-    set_target_properties(logos-storage-cli PROPERTIES
-        INSTALL_RPATH "$ORIGIN/../lib"
-        BUILD_WITH_INSTALL_RPATH TRUE
-    )
-endif()
+# Set RPATH settings for each executable
+foreach(_target logos-uploader logos-downloader)
+    if(APPLE)
+        set_target_properties(${_target} PROPERTIES
+            INSTALL_RPATH "@executable_path/../lib"
+            BUILD_WITH_INSTALL_RPATH TRUE
+        )
+    elseif(UNIX)
+        set_target_properties(${_target} PROPERTIES
+            INSTALL_RPATH "$ORIGIN/../lib"
+            BUILD_WITH_INSTALL_RPATH TRUE
+        )
+    endif()
+endforeach()
 
 ########### RUNTIME LINKS END ###########
 
 ########### INSTALL ###########
 
 # Install rules
-install(TARGETS logos-storage-cli
+install(TARGETS logos-uploader logos-downloader
     RUNTIME DESTINATION bin
 )
 
