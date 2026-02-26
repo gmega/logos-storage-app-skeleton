@@ -2,13 +2,29 @@
 
 #include <QCoreApplication>
 #include <QDir>
+#include <QEventLoop>
+#include <QTimer>
 #include <iostream>
+
+#define DEFAULT_TIMEOUT 10000
 
 int app_main(LogosModules* modules, int argc, char* argv[]);
 
+bool await(QEventLoop* loop, int timeoutMs) {
+  QTimer::singleShot(timeoutMs, loop, [loop]() {
+    std::cerr << "Call timed out." << std::endl;
+    loop->exit(1);
+  });
+  return loop->exec() == 0;
+}
+
+void notify(QEventLoop* loop, bool successValue) {
+  loop->exit(successValue ? 0 : 1);
+}
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <upload|download> <arguments>" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " <file path>" << std::endl;
         return 1;
     }
 
@@ -28,6 +44,7 @@ int main(int argc, char* argv[]) {
 }
 
 int app_main(LogosModules* modules, int argc, char* argv[]) {
+
     if (argc < 2) {
         std::cerr << "Usage: " << argv[0] << " <file>" << std::endl;
         return 1;
@@ -44,5 +61,51 @@ int app_main(LogosModules* modules, int argc, char* argv[]) {
         return 1;
     }
 
-    return 0;
+    {
+      QEventLoop loop;
+      modules->storage_module.on("storageStart", [&loop](const QVariantList& data) {
+        bool success = data[0].toBool();
+        if (!success) {
+          std::cerr << "Failed to start storage module: " << data[1].toString().toStdString() << std::endl;
+        }
+        notify(&loop, success);
+      });
+
+      modules->storage_module.start();
+
+      if (!await(&loop, DEFAULT_TIMEOUT)) {
+        return 1;
+      }
+    }
+
+    {
+      QEventLoop loop;
+
+      // Uploads file.
+      modules->storage_module.on("storageUploadDone", [&loop](const QVariantList& data) {
+          bool success = data[0].toBool();
+          if (!success) {
+              std::cerr << "Failed to upload file: " << data[2].toString().toStdString() << std::endl;
+              notify(&loop, false);
+              return;
+          }
+
+          std::cout << "CID: " << data[2].toString().toStdString() << std::endl;
+          notify(&loop, true);
+      });
+
+      QUrl url = QUrl::fromLocalFile(argv[1]);
+      LogosResult result = modules->storage_module.uploadUrl(url);
+      if (!result.success) {
+          std::cerr << "Failed to upload file: " << result.getValue<QString>().toStdString() << std::endl;
+          return 1;
+      }
+
+      if (!await(&loop, DEFAULT_TIMEOUT)) {
+        return 1;
+      }
+    }
+
+    std::cout << "Upload completed successfully. Type CTRL+C to exit." << std::endl;
+    return QCoreApplication::exec();
 }
