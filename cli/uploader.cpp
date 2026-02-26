@@ -30,10 +30,10 @@ int main(int argc, char* argv[]) {
 
     QCoreApplication app(argc, argv);
     QCoreApplication::setOrganizationName("Logos");
-    QCoreApplication::setApplicationName("LogosStorageCLI");
+    QCoreApplication::setApplicationName("LogosUploader");
 
     Logos logos(QCoreApplication::applicationDirPath() + "/../modules");
-    if (!logos.init()) {
+    if (!logos.init("LogosUploader")) {
         std::cerr << "Failed to initialize Logos" << std::endl;
         return 1;
     }
@@ -53,6 +53,7 @@ int app_main(LogosModules* modules, int argc, char* argv[]) {
     const QString jsonConfig = "{"
       "\"listen-addrs\": [\"/ip4/0.0.0.0/tcp/8000\"],"
       "\"disc-port\": 9000,"
+      "\"data-dir\": \"./uploader-data\","
       "\"nat\": \"none\""
     "}";
 
@@ -77,6 +78,14 @@ int app_main(LogosModules* modules, int argc, char* argv[]) {
         return 1;
       }
     }
+
+    LogosResult spr = modules->storage_module.spr();
+    if (!spr.success) {
+        std::cerr << "Failed to get SPR: " << spr.getValue<QString>().toStdString() << std::endl;
+        return 1;
+    }
+
+    std::cerr << "SPR: " << spr.getValue<QString>().toStdString() << std::endl;
 
     {
       QEventLoop loop;

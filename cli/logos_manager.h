@@ -24,7 +24,7 @@ public:
 
     // Initialize the Logos Core: set plugins directory, start, and load required plugins.
     // Returns true on success.
-    bool init();
+    bool init(const QString& name);
 
     // Cleanup the Logos Core. Called automatically in destructor.
     void cleanup();

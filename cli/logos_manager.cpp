@@ -22,7 +22,7 @@ Logos::~Logos()
     }
 }
 
-bool Logos::init()
+bool Logos::init(const QString& name)
 {
     std::cout << "Setting plugins directory to: " << m_pluginsDir.toStdString() << std::endl;
     logos_core_set_plugins_dir(m_pluginsDir.toUtf8().constData());
@@ -37,7 +37,7 @@ bool Logos::init()
     }
     std::cout << "Successfully loaded storage_module plugin" << std::endl;
 
-    m_api = new LogosAPI("cli");
+    m_api = new LogosAPI(name);
     m_modules = new LogosModules(m_api);
     m_initialized = true;
     return true;
