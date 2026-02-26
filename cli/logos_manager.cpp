@@ -37,7 +37,8 @@ bool Logos::init()
     }
     std::cout << "Successfully loaded storage_module plugin" << std::endl;
 
-    m_api = std::make_unique<LogosAPI>("cli");
+    m_api = new LogosAPI("cli");
+    m_modules = new LogosModules(m_api);
     m_initialized = true;
     return true;
 }
@@ -50,13 +51,14 @@ void Logos::cleanup()
 
     qDebug() << "Logos: cleanup...";
 
-    m_api.reset();
+    delete m_modules;
+    delete m_api;
     logos_core_cleanup();
 
     m_initialized = false;
 }
 
-LogosAPI* Logos::api() const
+LogosModules* Logos::modules()
 {
-    return m_api.get();
+    return m_modules;
 }

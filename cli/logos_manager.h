@@ -3,6 +3,7 @@
 #include <QString>
 #include <memory>
 
+#include "logos_sdk.h"
 #include "logos_api.h"
 
 // Logos manages the lifecycle of the Logos Core and its plugins.
@@ -28,12 +29,11 @@ public:
     // Cleanup the Logos Core. Called automatically in destructor.
     void cleanup();
 
-    // Access to the LogosAPI instance for use with module APIs (e.g. StorageModule).
-    // Returns nullptr if init() has not been called successfully.
-    LogosAPI* api() const;
+    LogosModules* modules();
 
 private:
     QString m_pluginsDir;
     bool m_initialized = false;
-    std::unique_ptr<LogosAPI> m_api;
+    LogosAPI* m_api = nullptr;
+    LogosModules* m_modules = nullptr;
 };

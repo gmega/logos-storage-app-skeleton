@@ -124,7 +124,7 @@ pkgs.stdenv.mkDerivation rec {
   installPhase = ''
     runHook preInstall
 
-    mkdir -p $out/bin $out/lib $out/modules
+    mkdir -p $out/bin $out/lib $out/modules $out/generated_code
 
     # Install CLI binary
     if [ -f "build/cli/bin/logos-storage-cli" ]; then
@@ -151,6 +151,9 @@ pkgs.stdenv.mkDerivation rec {
     if ls "${logosSdk}/lib/"liblogos_sdk.* >/dev/null 2>&1; then
       cp -L "${logosSdk}/lib/"liblogos_sdk.* "$out/lib/" || true
     fi
+
+    # Copy generated header files
+    cp -R "./cli/generated_code" "$out/generated_code" || true
 
     # Determine platform-specific plugin extension
     OS_EXT="so"
