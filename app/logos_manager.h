@@ -13,8 +13,8 @@
 //   Logos logos(pluginsDir);
 //   if (!logos.init()) { return 1; }
 //
-//   StorageModule storage(logos.api());
-//   LogosResult result = storage.version();
+//   LogosModules* modules = logos.modules();
+//   LogosResult result = modules->storage_module.version();
 //
 //   // cleanup() is called automatically in destructor
 class Logos {
