@@ -39,7 +39,7 @@
           };
 
           # CLI package
-          cli = import ./nix/cli.nix {
+          app = import ./nix/app.nix {
             inherit pkgs common src logosLiblogos logosSdk logosStorageModule logosCapabilityModule;
           };
 
@@ -47,10 +47,10 @@
         {
           # Individual outputs
           lib = lib;
-          cli = cli;
+          app = app;
 
           # Default package
-          default = cli;
+          default = app;
         }
       );
 

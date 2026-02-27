@@ -22,20 +22,13 @@ void notify(QEventLoop* loop, bool successValue) {
   loop->exit(successValue ? 0 : 1);
 }
 
-int app_main(LogosModules* modules, int argc, char* argv[]);
-
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <upload|download> <arguments>" << std::endl;
-        return 1;
-    }
-
     QCoreApplication app(argc, argv);
     QCoreApplication::setOrganizationName("Logos");
-    QCoreApplication::setApplicationName("LogosDownloader");
+    QCoreApplication::setApplicationName("LogosUploader");
 
     Logos logos(QCoreApplication::applicationDirPath() + "/../modules");
-    if (!logos.init("LogosDownloader")) {
+    if (!logos.init("LogosUploader")) {
         std::cerr << "Failed to initialize Logos" << std::endl;
         return 1;
     }
@@ -46,17 +39,12 @@ int main(int argc, char* argv[]) {
 }
 
 int app_main(LogosModules* modules, int argc, char* argv[]) {
-    if (argc < 4) {
-        std::cerr << "Usage: " << argv[0] << " <bootstrap-spr> <cid> <file>" << std::endl;
-        return 1;
-    }
 
     const QString jsonConfig = "{"
-      "\"listen-port\": 8001,"
-      "\"disc-port\": 9001,"
-      "\"nat\": \"none\","
-      "\"data-dir\": \"./downloader-data\","
-      "\"bootstrap-node\": [\"" + QString(argv[1]) + "\"]"
+      "\"listen-addrs\": [\"/ip4/0.0.0.0/tcp/8000\"],"
+      "\"disc-port\": 9000,"
+      "\"data-dir\": \"./app-data\","
+      "\"nat\": \"none\""
     "}";
 
     if (!modules->storage_module.init(jsonConfig)) {
@@ -64,12 +52,8 @@ int app_main(LogosModules* modules, int argc, char* argv[]) {
         return 1;
     }
 
-    QUrl url = QUrl::fromLocalFile(argv[3]);
-    QString cid = argv[2];
-
     {
       QEventLoop loop;
-
       modules->storage_module.on("storageStart", [&loop](const QVariantList& data) {
         bool success = data[0].toBool();
         if (!success) {
@@ -83,26 +67,12 @@ int app_main(LogosModules* modules, int argc, char* argv[]) {
       if (!await(&loop, DEFAULT_TIMEOUT)) {
         return 1;
       }
+
+      std::cerr << "Storage module started successfully" << std::endl;
     }
 
-    {
-      QEventLoop loop;
+    // Rest of the app goes here.
 
-      modules->storage_module.on("storageDownloadDone", [&loop](const QVariantList& data) {
-        bool success = data[0].toBool();
-        if (!success) {
-          std::cerr << "Failed to download file: " << data[2].toString().toStdString() << std::endl;
-        }
-        notify(&loop, success);
-      });
-
-      modules->storage_module.downloadToUrl(cid, url);
-
-      if (!await(&loop, DEFAULT_TIMEOUT)) {
-        return 1;
-      }
-    }
-
-    std::cerr << "Download completed successfully." << std::endl;
+    std::cerr << "Exiting..." << std::endl;
     return 0;
 }

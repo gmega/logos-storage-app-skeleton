@@ -63,11 +63,8 @@ find_library(LOGOS_SDK_LIB logos_sdk PATHS ${LOGOS_CPP_SDK_ROOT}/lib NO_DEFAULT_
 target_link_libraries(logos-common PUBLIC ${LOGOS_SDK_LIB})
 
 # Create executables
-add_executable(logos-uploader uploader.cpp)
-target_link_libraries(logos-uploader PRIVATE logos-common)
-
-add_executable(logos-downloader downloader.cpp)
-target_link_libraries(logos-downloader PRIVATE logos-common)
+add_executable(storage-app main.cpp)
+target_link_libraries(storage-app PRIVATE logos-common)
 
 ########### APP DEFINITION END ###########
 
@@ -134,7 +131,7 @@ endif()
 ########### RUNTIME LINKS ###########
 
 # Set RPATH settings for each executable
-foreach(_target logos-uploader logos-downloader)
+foreach(_target storage-app)
     if(APPLE)
         set_target_properties(${_target} PROPERTIES
             INSTALL_RPATH "@executable_path/../lib"
@@ -153,7 +150,7 @@ endforeach()
 ########### INSTALL ###########
 
 # Install rules
-install(TARGETS logos-uploader logos-downloader
+install(TARGETS storage-app
     RUNTIME DESTINATION bin
 )
 

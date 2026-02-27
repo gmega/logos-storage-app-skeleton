@@ -1,0 +1,12 @@
+{
+    "name": "logos_storage_app",
+    "version": "1.0.0",
+    "description": "A simple application skeleton for a Logos Storage app on Logos Core",
+    "author": "Logos Storage Team",
+    "type": "app",
+    "main": "storage-app",
+    "dependencies": [
+        "storage_module"
+    ],
+    "capabilities": []
+}
