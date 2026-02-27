@@ -67,11 +67,6 @@ int app_main(LogosModules* modules, int argc, char* argv[]) {
     QUrl url = QUrl::fromLocalFile(argv[3]);
     QString cid = argv[2];
 
-    if (!modules->storage_module.init(jsonConfig)) {
-      std::cerr << "Failed to initialize storage module" << std::endl;
-      return 1;
-    }
-
     {
       QEventLoop loop;
 
