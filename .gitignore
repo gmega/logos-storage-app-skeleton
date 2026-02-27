@@ -7,3 +7,5 @@ app/build
 CMakeLists.txt.user
 generated_code
 .cache
+downloader-data
+uploader-data
