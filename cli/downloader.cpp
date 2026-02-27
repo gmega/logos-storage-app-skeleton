@@ -52,7 +52,7 @@ int app_main(LogosModules* modules, int argc, char* argv[]) {
     }
 
     const QString jsonConfig = "{"
-      "\"listen-addrs\": [\"/ip4/0.0.0.0/tcp/8001\"],"
+      "\"listen-port\": 8001,"
       "\"disc-port\": 9001,"
       "\"nat\": \"none\","
       "\"data-dir\": \"./downloader-data\","
