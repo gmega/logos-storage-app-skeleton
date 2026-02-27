@@ -4,8 +4,8 @@
   inputs = {
     # Follow the same nixpkgs as logos-liblogos to ensure compatibility
     nixpkgs.follows = "logos-liblogos/nixpkgs";
-    logos-cpp-sdk.url = "github:logos-co/logos-cpp-sdk?ref=feat/logos-result";
-    logos-liblogos.url = "github:logos-co/logos-liblogos?ref=fix/logos-cleanup-on-terminate";
+    logos-cpp-sdk.url = "github:logos-co/logos-cpp-sdk?ref=feat/logos-instance-id";
+    logos-liblogos.url = "github:logos-co/logos-liblogos?ref=feat/logos-instance-id";
     logos-storage-module.url = "github:logos-co/logos-storage-module";
     logos-capability-module.url = "github:logos-co/logos-capability-module";
     logos-liblogos.inputs.logos-cpp-sdk.follows = "logos-cpp-sdk";
