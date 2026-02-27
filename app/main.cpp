@@ -1,3 +1,7 @@
+// This file contains the basic skeleton for a Logos Storage CLI application.
+// It implements basic module initialization and startup, and provides simple
+// synchronization primitives.
+
 #include "logos_manager.h"
 
 #include <QCoreApplication>
@@ -6,10 +10,29 @@
 #include <QTimer>
 #include <iostream>
 
+// Default timeout for operations, in milliseconds. It is in general
+// not a good idea to use the same timeout for all operations, but
+// fine for an example.
 #define DEFAULT_TIMEOUT 10000
 
+// The main function for the app. This is where application logic
+// should go.
 int app_main(LogosModules* modules, int argc, char* argv[]);
 
+
+// The storage module runs operations asynchronously, and we'd often
+// like to wait for such operations to complete before we do something
+// else; e.g., wait for the module to initialize before we upload a file.
+//
+// Since Logos Core is Qt-based, we provide two simple synchronization
+// primitives which are friendly to Qt's event loop: an `await` call,
+// which can be invoked by the main thread to block and wait for an
+// operation, and a `notify` call, which can be invoked by the
+// operation's signal handler to "wake up" the main thread when it
+// completes.
+
+// "Blocks" the main thread until `notify` is called on the
+// corresponding signal handler.
 bool await(QEventLoop* loop, int timeoutMs) {
   QTimer::singleShot(timeoutMs, loop, [loop]() {
     std::cerr << "Call timed out." << std::endl;
@@ -18,6 +41,8 @@ bool await(QEventLoop* loop, int timeoutMs) {
   return loop->exec() == 0;
 }
 
+// "Wakes up" the main thread, signalling that an operation
+// has completed. Typically called by a signal handler.
 void notify(QEventLoop* loop, bool successValue) {
   loop->exit(successValue ? 0 : 1);
 }
@@ -40,6 +65,8 @@ int main(int argc, char* argv[]) {
 
 int app_main(LogosModules* modules, int argc, char* argv[]) {
 
+    // See https://github.com/logos-co/logos-storage-module/blob/7512d6745f9f412220e0c589e3f82fe454405e6d/storage_module_interface.h#L13
+    // for a full list of options.
     const QString jsonConfig = "{"
       "\"listen-addrs\": [\"/ip4/0.0.0.0/tcp/8000\"],"
       "\"disc-port\": 9000,"
@@ -52,6 +79,8 @@ int app_main(LogosModules* modules, int argc, char* argv[]) {
         return 1;
     }
 
+    // This showcases the use of await/notify. Each await/notify pair requires the use of
+    // a distinct, scoped event loop.
     {
       QEventLoop loop;
       modules->storage_module.on("storageStart", [&loop](const QVariantList& data) {
